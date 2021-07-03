@@ -1,4 +1,4 @@
-import 'package:exemplo/src/contact/add_bloc.dart';
+import '/src/contact/add_bloc.dart';
 import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:flutter/material.dart';
 

@@ -1,9 +1,12 @@
-import 'package:exemplo/src/contact/add_page.dart';
-import 'package:exemplo/src/shared/widgets/ContactList.dart';
+import '/src/contact/add_page.dart';
+import '/src/shared/widgets/ContactList.dart';
 import 'package:flutter/material.dart';
 
 import 'home_bloc.dart';
 import 'home_module.dart';
+
+final _backgroundColor = Color(0xFFededed);
+final _foregroundColor = Colors.black;
 
 class HomePage extends StatefulWidget {
   static String tag = 'home-page';
@@ -13,9 +16,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   HomeBloc bloc;
-  Widget appBarTitle = new Text("Contatos");
-  Icon actionIcon = new Icon(Icons.search);
-  Color color = Colors.indigo;
+  Widget appBarTitle = Text("المساعدات",
+      style: TextStyle(
+          fontSize: 35, color: _foregroundColor, fontFamily: 'Scheherazade'));
+  Icon actionIcon = Icon(Icons.search);
+  Color color = _backgroundColor;
   bool searching = false;
   final _cSearch = TextEditingController();
 
@@ -36,7 +41,7 @@ class _HomePageState extends State<HomePage> {
           builder: (conext, snapshot) {
             if (snapshot.hasError) {
               print(snapshot.error);
-              return Text('Error: ${snapshot.error}');
+              return Text('خطأ: ${snapshot.error}');
             } else {
               if (!snapshot.hasData) {
                 return Center(child: CircularProgressIndicator());
@@ -45,43 +50,58 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.data) {
                 return AppBar(
                   title: appBarTitle,
+                  centerTitle: true,
+                  elevation: 0,
                   backgroundColor: color,
                   actions: <Widget>[
                     IconButton(
                       icon: actionIcon,
+                      color: _foregroundColor,
                       onPressed: () {
                         setState(() {
                           if (this.actionIcon.icon == Icons.search) {
-                            this.actionIcon = new Icon(
-                              Icons.close,
-                              color: Colors.indigo,
-                            );
-                            this.color = Colors.white;
-                            this.appBarTitle = new TextField(
-                              controller: _cSearch,
-                              style: new TextStyle(
-                                color: Colors.indigo,
+                            this.actionIcon =
+                                Icon(Icons.close, color: _foregroundColor);
+                            this.color = _backgroundColor;
+                            this.appBarTitle = Center(
+                              child: TextField(
+                                controller: _cSearch,
+                                cursorColor: _foregroundColor,
+                                style: TextStyle(
+                                    color: _foregroundColor,
+                                    fontFamily: 'Changa'),
+                                autofocus: true,
+                                onChanged: (value) {
+                                  this.searching = true;
+                                  bloc.getListBySearch(value);
+                                },
+                                decoration: InputDecoration(
+                                    focusColor: _foregroundColor,
+                                    fillColor: _foregroundColor,
+                                    hoverColor: _foregroundColor,
+                                    focusedBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    // prefixIcon: Icon(Icons.search,
+                                    //     color: _foregroundColor),
+                                    hintText: "بحث",
+                                    hintStyle:
+                                        TextStyle(color: _foregroundColor)),
                               ),
-                              autofocus: true,
-                              onChanged: (value) {
-                                this.searching = true;
-                                bloc.getListBySearch(value);
-                              },
-                              decoration: new InputDecoration(
-                                  prefixIcon: new Icon(Icons.search,
-                                      color: Colors.indigo),
-                                  hintText: "Pesquisar contatos",
-                                  hintStyle:
-                                      new TextStyle(color: Colors.indigo)),
                             );
                           } else {
                             _cSearch.clear();
                             this.searching = false;
-                            this.actionIcon = new Icon(
+
+                            this.actionIcon = Icon(
                               Icons.search,
                             );
-                            this.color = Colors.indigo;
-                            this.appBarTitle = new Text("Contatos");
+
+                            this.color = _backgroundColor;
+                            this.appBarTitle = Text("المساعدات",
+                                style: TextStyle(
+                                    fontSize: 35,
+                                    color: _foregroundColor,
+                                    fontFamily: 'Scheherazade'));
                             // bloc.getListContact();
                           }
                         });
@@ -91,7 +111,12 @@ class _HomePageState extends State<HomePage> {
                 );
               } else {
                 return AppBar(
-                  title: Text("Contatos"),
+                  title: Text("المساعدات",
+                      style: TextStyle(
+                          fontSize: 35,
+                          color: _foregroundColor,
+                          fontFamily: 'Scheherazade')),
+                  centerTitle: true,
                 );
               }
             }
@@ -102,12 +127,13 @@ class _HomePageState extends State<HomePage> {
         stream: bloc.listContactOut,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+                child: CircularProgressIndicator(color: _foregroundColor));
           }
 
           if (snapshot.hasError) {
             print(snapshot.error);
-            return Text('Error: ${snapshot.error}');
+            return Text('خطأ: ${snapshot.error}');
           } else {
             bloc.setVisibleButtonSearch(snapshot.data.length > 0 || searching);
 
@@ -117,7 +143,22 @@ class _HomePageState extends State<HomePage> {
                   Center(
                       child: Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text("Nenhum contato localizado"),
+                    child: Center(
+                        child: Column(
+                      children: [
+                        SizedBox(height: 30),
+                        Image(
+                          image: AssetImage('assets/openMagnifyingGlass.png'),
+                          width: 250,
+                          height: 250,
+                        ),
+                        Center(
+                          child: Text('لا توجد مساعدات مسجلة',
+                              style: TextStyle(
+                                  fontSize: 35, fontFamily: 'Scheherazade')),
+                        ),
+                      ],
+                    )),
                   )),
                 ],
               );
@@ -128,6 +169,9 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        tooltip: "إنشاء مساعدة جديدة",
+        backgroundColor: _foregroundColor,
+        foregroundColor: _backgroundColor,
         child: Icon(Icons.add),
         onPressed: () {
           Navigator.push(

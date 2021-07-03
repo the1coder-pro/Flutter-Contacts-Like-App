@@ -1,5 +1,5 @@
 import 'package:bloc_pattern/bloc_pattern.dart';
-import 'package:exemplo/src/shared/repository/abstract_repository.dart';
+import '/src/shared/repository/abstract_repository.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../application.dart';
@@ -45,7 +45,13 @@ class ContactRepository extends AbstractRepository with Disposable {
   @override
   Future<int> insert(Map<String, dynamic> values) async {
     Database db = await this.getDb();
-    int newId = await db.insert('contacts', values);
+    var newId;
+    try {
+      int newId = await db.insert('contacts', values);
+      return newId;
+    } on DatabaseException catch (e) {
+      print(e);
+    }
     return newId;
   }
 
@@ -64,10 +70,12 @@ class ContactRepository extends AbstractRepository with Disposable {
               contacts 
            WHERE 
               name LIKE '%$value%' or 
-              nickName LIKE '%$value%' or 
               phoneNumber LIKE'%$value%' or 
-              work LIKE'%$value%' or 
-              email LIKE '%$value%'
+              nationalId LIKE'%$value%' or 
+              helpDate LIKE '%$value%' or 
+              helpType LIKE '%$value%' or
+              helpAmount LIKE '%$value%' or
+              helpDuration LIKE '%$value%'
             ORDER BY name
         """);
 

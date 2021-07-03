@@ -15,10 +15,10 @@ class _AboutPageState extends State<AboutPage> {
         launch(url);
       } else {
         // Show an snackbar error
-        Scaffold.of(context).showSnackBar(
+        ScaffoldMessengerState().showSnackBar(
           SnackBar(
-            content: Text(
-                'Não foi possível abrir o site, tente novamente mais tarde'),
+            content:
+                Text('تعذر فتح الموقع ، يرجى المحاولة مرة أخرى في وقت لاحق'),
             duration: Duration(seconds: 15),
           ),
         );
@@ -29,7 +29,7 @@ class _AboutPageState extends State<AboutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Sobre")),
+      appBar: AppBar(title: Text("About")),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -44,7 +44,7 @@ class _AboutPageState extends State<AboutPage> {
             ),
           ),
           SizedBox(height: 10),
-          Center(child: Text('App Contatos', style: TextStyle(fontSize: 16))),
+          Center(child: Text('Contact App', style: TextStyle(fontSize: 16))),
           SizedBox(height: 20),
           Center(
             child: Text('App Flutter by:'),

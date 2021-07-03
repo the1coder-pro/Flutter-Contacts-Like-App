@@ -10,12 +10,6 @@
 @import flutter_appavailability;
 #endif
 
-#if __has_include(<flutter_launch/FlutterLaunchPlugin.h>)
-#import <flutter_launch/FlutterLaunchPlugin.h>
-#else
-@import flutter_launch;
-#endif
-
 #if __has_include(<path_provider/FLTPathProviderPlugin.h>)
 #import <path_provider/FLTPathProviderPlugin.h>
 #else
@@ -44,7 +38,6 @@
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
   [AppAvailability registerWithRegistrar:[registry registrarForPlugin:@"AppAvailability"]];
-  [FlutterLaunchPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterLaunchPlugin"]];
   [FLTPathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTPathProviderPlugin"]];
   [FLTSharePlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTSharePlugin"]];
   [SqflitePlugin registerWithRegistrar:[registry registrarForPlugin:@"SqflitePlugin"]];

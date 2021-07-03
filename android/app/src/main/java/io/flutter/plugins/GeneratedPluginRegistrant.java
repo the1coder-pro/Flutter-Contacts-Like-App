@@ -16,7 +16,6 @@ public final class GeneratedPluginRegistrant {
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
     ShimPluginRegistry shimPluginRegistry = new ShimPluginRegistry(flutterEngine);
       com.pichillilorenzo.flutter_appavailability.AppAvailability.registerWith(shimPluginRegistry.registrarFor("com.pichillilorenzo.flutter_appavailability.AppAvailability"));
-      flutterlaunch.thyagoluciano.com.flutter_launch.FlutterLaunchPlugin.registerWith(shimPluginRegistry.registrarFor("flutterlaunch.thyagoluciano.com.flutter_launch.FlutterLaunchPlugin"));
     flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());
     flutterEngine.getPlugins().add(new io.flutter.plugins.share.SharePlugin());
     flutterEngine.getPlugins().add(new com.tekartik.sqflite.SqflitePlugin());

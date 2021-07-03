@@ -1,15 +1,20 @@
-import 'dart:io';
-import 'dart:async';
-import 'package:exemplo/src/home/home_bloc.dart';
-import 'package:exemplo/src/home/home_module.dart';
+// import 'dart:io';
+// import 'dart:async';
+// import 'package:exemplo/application.dart';
+
+import '/src/home/home_bloc.dart';
+import '/src/home/home_module.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_appavailability/flutter_appavailability.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/services.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_launch/flutter_launch.dart';
+// import 'package:flutter_launch/flutter_launch.dart';
 
 import 'edit_page.dart';
+
+final _backgroundColor = Color(0xFFededed);
+final _foregroundColor = Colors.black;
 
 class ViewPage extends StatefulWidget {
   static String tag = 'view-page';
@@ -19,7 +24,7 @@ class ViewPage extends StatefulWidget {
 }
 
 class _ViewPageState extends State<ViewPage> {
-  static String defaultMessage = "Não informado";
+  static String defaultMessage = "لا توجد بيانات";
 
   bool existWhatsapp = false;
   Map contact;
@@ -34,30 +39,17 @@ class _ViewPageState extends State<ViewPage> {
     super.initState();
   }
 
-  Future<void> getApps() async {
-    try {
-      if (Platform.isAndroid) {
-        await AppAvailability.checkAvailability("com.whatsapp");
-      } else if (Platform.isIOS) {
-        await AppAvailability.checkAvailability("whatsapp://");
-      }
-      this.existWhatsapp = true;
-    } catch (err) {
-      this.existWhatsapp = false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    getApps();
+    final pageContext = context;
     ListView content(context, Map snapshot) {
       return ListView(
         children: <Widget>[
           Column(
             children: <Widget>[
-              buildHeader(context, snapshot['name']),
-              buildInformation(
-                  snapshot['phoneNumber'], snapshot['email'], snapshot['name']),
+              buildHeader(context, "${snapshot['name']}"),
+              buildInformation(snapshot['phoneNumber'], snapshot['nationalId'],
+                  [snapshot['name']], snapshot['notes']),
             ],
           )
         ],
@@ -69,31 +61,77 @@ class _ViewPageState extends State<ViewPage> {
         preferredSize: const Size(double.infinity, kToolbarHeight),
         child: StreamBuilder(
           stream: blocHome.favoriteOut,
-          builder: (conext, snapshot) {
+          builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
               print(snapshot.error);
-              return Text('Error: ${snapshot.error}');
+              return Text('خطأ : ${snapshot.error}');
             } else {
+              var fullNameSeprated = contact['name'].trim().split(" ");
+              // fullNameSeprated.removeWhere((element) =>
+              //     element == " " ||
+              //     element.isEmpty ||
+              //     element == "" ||
+              //     element == ".");
+              var lastName = fullNameSeprated.last;
+              fullNameSeprated.removeLast();
+              var firstName = fullNameSeprated.join(" ");
+
               return AppBar(
+                foregroundColor: _foregroundColor,
+                actionsIconTheme: IconThemeData(color: _foregroundColor),
+                iconTheme: IconThemeData(color: _foregroundColor),
                 elevation: 0,
                 actions: <Widget>[
                   IconButton(
-                    color: Colors.white,
-                    icon: snapshot.data
-                        ? Icon(Icons.star)
-                        : Icon(Icons.star_border),
-                    onPressed: () {
-                      blocHome.updateFavorite(
-                          this.contact['id'], !snapshot.data);
-                    },
-                  ),
+                      icon: Icon(Icons.delete),
+                      tooltip: "حذف",
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text(
+                                    "هل انت متأكد انك تريد حذف هذه المساعدة ؟"),
+                                content: Text(
+                                  "$firstName $lastName",
+                                  style: TextStyle(
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                actions: <Widget>[
+                                  OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                        primary: _foregroundColor),
+                                    child: Text("إلغاء"),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        primary: _foregroundColor),
+                                    child: Text(
+                                      "نعم",
+                                      style: TextStyle(color: _backgroundColor),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      blocHome.deleteContact(contact['id']);
+                                      Navigator.pop(pageContext);
+                                    },
+                                  ),
+                                ],
+                              );
+                            });
+                      }),
                   IconButton(
-                    color: Colors.white,
                     icon: Icon(Icons.edit),
+                    tooltip: "تعديل",
                     onPressed: () {
                       EditPage.contact = this.contact;
                       Navigator.push(
@@ -102,11 +140,6 @@ class _ViewPageState extends State<ViewPage> {
                       );
                     },
                   ),
-                  // IconButton(
-                  //   color: Colors.white,
-                  //   icon: Icon(Icons.more_vert),
-                  //   onPressed: () {},
-                  // ),
                 ],
               );
             }
@@ -133,10 +166,6 @@ class _ViewPageState extends State<ViewPage> {
     );
   }
 
-  void whatsAppOpen(phoneNumber, message) async {
-    await FlutterLaunch.launchWathsApp(phone: phoneNumber, message: message);
-  }
-
   _textMe(String number) async {
     // Android
     String uri = "sms:$number";
@@ -148,7 +177,7 @@ class _ViewPageState extends State<ViewPage> {
       if (await canLaunch(uri)) {
         await launch(uri);
       } else {
-        throw 'Could not launch $uri';
+        throw 'لم يستطع الفتح $uri';
       }
     }
   }
@@ -158,13 +187,29 @@ class _ViewPageState extends State<ViewPage> {
     if (await canLaunch(url)) {
       await launch(url);
     } else {
-      throw 'Could not launch $url';
+      throw 'لم يستطع الفتح $url';
     }
   }
 
   Container buildHeader(BuildContext context, String name) {
+    var titleName = name;
+    var fullNameSeprated = titleName.trim().split(" ");
+    // fullNameSeprated.removeWhere((element) =>
+    //     element == " " || element.isEmpty || element == "" || element == ".");
+    var lastName = fullNameSeprated.last == "" ||
+            fullNameSeprated.last.trim() == null ||
+            fullNameSeprated.last.trim().isEmpty
+        ? null
+        : fullNameSeprated.last.trim();
+
+    var firstName = fullNameSeprated.first.trim() == "" ||
+            fullNameSeprated.first.trim() == null ||
+            fullNameSeprated.first.trim().isEmpty
+        ? null
+        : fullNameSeprated.first;
+
     return Container(
-      decoration: BoxDecoration(color: Colors.indigo),
+      decoration: BoxDecoration(color: _backgroundColor),
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height * 0.40,
       child: Column(
@@ -173,7 +218,7 @@ class _ViewPageState extends State<ViewPage> {
           SizedBox(height: 20),
           Icon(
             Icons.person,
-            color: Colors.white,
+            color: _foregroundColor,
             size: 160,
           ),
           Row(
@@ -181,9 +226,14 @@ class _ViewPageState extends State<ViewPage> {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: Text(
-                  name,
-                  style: TextStyle(color: Colors.white, fontSize: 30),
+                child: Center(
+                  child: Text(
+                    "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}",
+                    style: TextStyle(
+                        color: _foregroundColor,
+                        fontSize: 36,
+                        fontFamily: 'Amiri'),
+                  ),
                 ),
               ),
             ],
@@ -193,83 +243,201 @@ class _ViewPageState extends State<ViewPage> {
     );
   }
 
-  Padding buildInformation(phoneNumber, email, nome) {
+  // TODO: ADD full name list tile [done]
+  Padding buildInformation(phoneNumber, nationalId, name, notes) {
+    var titleName = name.join(" ");
+    var fullNameSeprated = titleName.trim().split(" ");
+    fullNameSeprated.removeWhere((element) =>
+        element == " " || element.isEmpty || element == "" || element == ".");
+    var lastName = fullNameSeprated.last == "" ||
+            fullNameSeprated.last.trim() == null ||
+            fullNameSeprated.last.trim().isEmpty
+        ? null
+        : fullNameSeprated.last.trim();
+
+    var firstName = fullNameSeprated.first.trim() == "" ||
+            fullNameSeprated.first.trim() == null ||
+            fullNameSeprated.first.trim().isEmpty
+        ? null
+        : fullNameSeprated.first;
+    print(fullNameSeprated);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: <Widget>[
           Card(
             child: ListTile(
-              title: Text(phoneNumber.toString().isNotEmpty
-                  ? phoneNumber
-                  : defaultMessage),
+              title: Text(
+                  name.join(" ").isNotEmpty ? name.join(" ") : defaultMessage),
               subtitle: Text(
-                "Telefone",
+                "الأسم الكامل",
                 style: TextStyle(color: Colors.black54),
               ),
+              onLongPress: name == "" || name == null
+                  ? null
+                  : () {
+                      Clipboard.setData(ClipboardData(text: name.join(" ")));
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          duration: Duration(seconds: 1),
+                          content: Text("تم نسخ الأسم الكامل",
+                              textDirection: TextDirection.rtl)));
+                    },
               leading: IconButton(
-                icon: Icon(Icons.phone, color: Colors.indigo),
-                onPressed: () {
-                  _launchCaller(phoneNumber);
-                },
-              ),
-              trailing: IconButton(
-                icon: Icon(Icons.message),
-                onPressed: () {
-                  _textMe(phoneNumber);
-                },
-              ),
+                  icon: Icon(Icons.person, color: _foregroundColor),
+                  tooltip: "الأسم الكامل",
+                  onPressed: null),
             ),
           ),
           Card(
             child: ListTile(
-              title: Text(email.toString().isNotEmpty ? email : defaultMessage),
+              title: Text(phoneNumber.toString().isNotEmpty
+                  ? phoneNumber
+                  : defaultMessage),
               subtitle: Text(
-                "E-mail",
+                "رقم الهاتف",
                 style: TextStyle(color: Colors.black54),
               ),
+              onTap: phoneNumber == "" || phoneNumber == null
+                  ? null
+                  : () => _launchCaller(phoneNumber),
+              onLongPress: phoneNumber == "" || phoneNumber == null
+                  ? null
+                  : () {
+                      Clipboard.setData(ClipboardData(text: phoneNumber));
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          duration: Duration(seconds: 1),
+                          content: Text("تم نسخ رقم الهاتف",
+                              textDirection: TextDirection.rtl)));
+                    },
+              leading: phoneNumber == "" || phoneNumber == null
+                  ? null
+                  : IconButton(
+                      icon: Icon(Icons.phone, color: _foregroundColor),
+                      tooltip: "اتصال",
+                      onPressed: () {
+                        _launchCaller(phoneNumber);
+                      },
+                    ),
+              trailing: phoneNumber == "" || phoneNumber == null
+                  ? null
+                  : IconButton(
+                      icon: Icon(Icons.message, color: _foregroundColor),
+                      tooltip: "رسائل",
+                      onPressed: () {
+                        _textMe(phoneNumber);
+                      },
+                    ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              title: Text(nationalId.toString().isNotEmpty
+                  ? nationalId
+                  : defaultMessage),
+              subtitle: Text(
+                "رقم الهوية",
+                style: TextStyle(color: Colors.black54),
+              ),
+              onLongPress: nationalId == "" || nationalId == null
+                  ? null
+                  : () {
+                      Clipboard.setData(ClipboardData(text: nationalId));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          duration: Duration(seconds: 1),
+                          content: Text("تم نسخ رقم الهوية",
+                              textDirection: TextDirection.rtl)));
+                    },
               leading: IconButton(
-                  icon: Icon(Icons.email, color: Colors.indigo),
-                  onPressed: () {}),
+                  icon: Icon(Icons.badge_outlined, color: _foregroundColor),
+                  onPressed: null),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              title: notes == "" || notes == null
+                  ? Text(defaultMessage)
+                  : SelectableText(
+                      notes,
+                      style: TextStyle(color: Colors.black),
+                    ),
+              subtitle: Text("الملاحظات"),
+              onLongPress: notes == "" || notes == null
+                  ? null
+                  : () {
+                      Clipboard.setData(ClipboardData(text: notes));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          duration: Duration(seconds: 1),
+                          content: Text("تم نسخ الملاحظات",
+                              textDirection: TextDirection.rtl)));
+                    },
+              leading: notes == "" || notes == null
+                  ? null
+                  : IconButton(
+                      icon: Icon(Icons.notes, color: _foregroundColor),
+                      tooltip: "ملاحظات",
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: notes));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            duration: Duration(seconds: 1),
+                            content: Text("تم نسخ الملاحظات",
+                                textDirection: TextDirection.rtl)));
+                      }),
             ),
           ),
           Card(
             child: ListTile(
               title: Text(
-                "Enviar contato",
+                "مشاركة هذه المساعدة",
               ),
               subtitle: Text(
-                "Compartilhar",
+                "مشاركة",
                 style: TextStyle(color: Colors.black54),
               ),
+              onTap: () {
+                if (phoneNumber != "" && nationalId != "") {
+                  Share.share("""
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الجوال: $phoneNumber
+                          رقم الهوية : $nationalId
+                        """);
+                } else if (phoneNumber == "" || phoneNumber == null) {
+                  Share.share("""
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الهوية : $nationalId
+                        """);
+                } else if (nationalId == "" || nationalId == null) {
+                  Share.share("""
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الجوال: $phoneNumber
+                        """);
+                }
+              },
               leading: IconButton(
-                  icon: Icon(Icons.share, color: Colors.indigo),
-                  onPressed: () {
+                icon: Icon(Icons.share, color: _foregroundColor),
+                tooltip: "مشاركة",
+                onPressed: () {
+                  if (phoneNumber != "" && nationalId != "") {
                     Share.share("""
-                        Nome: $nome
-                        Tel: $phoneNumber
-                      """);
-                  }),
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الجوال: $phoneNumber
+                          رقم الهوية : $nationalId
+                        """);
+                  } else if (phoneNumber == "" || phoneNumber == null) {
+                    Share.share("""
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الهوية : $nationalId
+                        """);
+                  } else if (nationalId == "" || nationalId == null) {
+                    Share.share("""
+                          الأسم: "$firstName ${fullNameSeprated.length != 1 ? lastName : ''}"
+                          رقم الجوال: $phoneNumber
+                        """);
+                  }
+                },
+              ),
             ),
-          ),
-          Card(
-            child: existWhatsapp
-                ? ListTile(
-                    title: Text(
-                      "Abrir no Whatsapp",
-                    ),
-                    subtitle: Text(
-                      "Whatsapp",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    leading: IconButton(
-                        icon: Icon(FontAwesomeIcons.whatsapp,
-                            color: Colors.indigo),
-                        onPressed: () {
-                          whatsAppOpen(phoneNumber.toString(), "");
-                        }),
-                  )
-                : Container(),
           ),
         ],
       ),

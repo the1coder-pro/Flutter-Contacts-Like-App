@@ -1,5 +1,5 @@
 import 'package:bloc_pattern/bloc_pattern.dart';
-import 'package:exemplo/src/shared/repository/contact_repository.dart';
+import '/src/shared/repository/contact_repository.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../app_module.dart';
