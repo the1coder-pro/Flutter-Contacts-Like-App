@@ -4,11 +4,12 @@ Building App Contacts in Flutter using Slidy
 
 ### Updated And Maintained By 
 [_zyton_](https://twitter.com/_zyton_)
+
 [the1coder-pro](https://github.com/the1coder-pro)
 
 
 
-### First Created By By
+### First Created By
 [Rogerio Sobrinho](https://github.com/RogerioSobrinho)
 
 ## License
