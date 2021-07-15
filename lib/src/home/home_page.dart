@@ -1,4 +1,7 @@
+import 'package:help_app/src/contact/print_page.dart';
+
 import '/src/contact/add_page.dart';
+import '/src/contact/chart_page.dart';
 import '/src/shared/widgets/ContactList.dart';
 import 'package:flutter/material.dart';
 
@@ -52,9 +55,76 @@ class _HomePageState extends State<HomePage> {
                   title: appBarTitle,
                   centerTitle: true,
                   elevation: 0,
+                  automaticallyImplyLeading: false,
                   backgroundColor: color,
+                  leading: PopupMenuButton(
+                      onSelected: (item) {
+                        switch (item) {
+                          case 'رسم بياني':
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ChartPage()));
+                            break;
+                          case 'طباعة':
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PrintPage()));
+
+                            break;
+                          case 'الإعدادات':
+                            return showModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return Scaffold(
+                                      appBar: AppBar(
+                                          centerTitle: true,
+                                          title: Text("الإعدادات"),
+                                          leading: IconButton(
+                                              icon: Icon(Icons.close),
+                                              onPressed: () =>
+                                                  Navigator.pop(context))));
+                                });
+
+                            break;
+                        }
+                      },
+                      icon: Icon(Icons.more_vert),
+                      itemBuilder: (BuildContext cotntext) =>
+                          <PopupMenuEntry<String>>[
+                            PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.bar_chart),
+                                    SizedBox(width: 30),
+                                    Text("رسم بياني"),
+                                  ],
+                                ),
+                                value: "رسم بياني"),
+                            PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.print),
+                                    SizedBox(width: 30),
+                                    Text("طباعة"),
+                                  ],
+                                ),
+                                value: "طباعة"),
+                            PopupMenuDivider(),
+                            PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.settings),
+                                    SizedBox(width: 30),
+                                    Text("الإعدادات"),
+                                  ],
+                                ),
+                                value: "الإعدادات")
+                          ]),
                   actions: <Widget>[
                     IconButton(
+                      tooltip: "بحث",
                       icon: actionIcon,
                       color: _foregroundColor,
                       onPressed: () {
@@ -117,6 +187,7 @@ class _HomePageState extends State<HomePage> {
                           color: _foregroundColor,
                           fontFamily: 'Scheherazade')),
                   centerTitle: true,
+                  automaticallyImplyLeading: false,
                 );
               }
             }

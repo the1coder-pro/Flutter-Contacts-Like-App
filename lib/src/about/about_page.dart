@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatefulWidget {
@@ -63,20 +63,20 @@ class _AboutPageState extends State<AboutPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                IconButton(
-                  icon: Icon(FontAwesomeIcons.github),
-                  onPressed: () => _openExternalLink(
-                    "https://github.com/RogerioSobrinho",
-                    context,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(FontAwesomeIcons.linkedin),
-                  onPressed: () => _openExternalLink(
-                    "https://linkedin.com/in/rogerio-sobrinho/",
-                    context,
-                  ),
-                ),
+                // IconButton(
+                //   icon: Icon(FontAwesomeIcons.github),
+                //   onPressed: () => _openExternalLink(
+                //     "https://github.com/RogerioSobrinho",
+                //     context,
+                //   ),
+                // ),
+                // IconButton(
+                //   icon: Icon(FontAwesomeIcons.linkedin),
+                //   onPressed: () => _openExternalLink(
+                //     "https://linkedin.com/in/rogerio-sobrinho/",
+                //     context,
+                //   ),
+                // ),
               ])
         ],
       ),

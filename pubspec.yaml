@@ -1,5 +1,5 @@
-name: exemplo
-description: A Contact App For Aid.
+name: help_app
+description: A Contact App For Help.
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -31,12 +31,27 @@ dependencies:
   string_validator: ^0.3.0
   google_fonts: ^2.1.0
   flutter_slidable: ^0.6.0
+
   flutter:
     sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
+  syncfusion_flutter_datepicker: ^19.2.46
+  syncfusion_flutter_core: ^19.2.46
+  syncfusion_flutter_charts: ^19.2.46+1
+  hijri: ^2.0.3
+  provider:
+  numeral: ^1.2.4
+  supercharged: ^2.0.0
+  dart_date: ^1.1.0
+
+  syncfusion_flutter_pdf: ^19.2.47-beta
+  # flutter_html_to_pdf:
+  permission_handler: ^8.1.2
+  open_file: ^3.2.1
+  printing: ^5.4.3
 
 dev_dependencies:
   flutter_test:

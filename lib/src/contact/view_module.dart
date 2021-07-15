@@ -1,6 +1,6 @@
-import 'package:exemplo/src/contact/view_bloc.dart';
+import 'package:help_app/src/contact/view_bloc.dart';
 import 'package:bloc_pattern/bloc_pattern.dart';
-// import 'package:exemplo/src/home/home_bloc.dart';
+// import 'package:help_app/src/home/home_bloc.dart';
 import 'package:flutter/material.dart';
 
 class ViewModule extends ModuleWidget {

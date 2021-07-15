@@ -1,4 +1,4 @@
-import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:numeral/numeral.dart';
 
 import '/src/about/about_page.dart';
 import '/src/contact/add_page.dart';
@@ -7,8 +7,9 @@ import '/src/contact/view_page.dart';
 import '/src/home/home_bloc.dart';
 import '/src/home/home_module.dart';
 // import 'package:google_fonts/google_fonts.dart';
-// import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
+import 'package:supercharged/supercharged.dart';
 
 final _backgroundColor = Color(0xFFededed);
 final _foregroundColor = Colors.black;
@@ -128,8 +129,6 @@ class _ContactListState extends State<ContactList> {
 
   @override
   Widget build(BuildContext context) {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject();
-
     if (widget.items.length == 0) {
       return column(context);
     }
@@ -141,71 +140,29 @@ class _ContactListState extends State<ContactList> {
         Map item = widget.items[index];
         return GestureDetector(
           onTapDown: _onTapDown,
-          onLongPress: () {
-            showMenu(
-              elevation: 3,
-              context: context,
-              items: [
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('تعديل'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      print(item);
-
-                      // bloc.setContact(item);
-                      EditPage.contact = item;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditPage()),
-                      );
-                    },
-                  ),
-                ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: Icon(Icons.delete),
-                    title: Text('حذف'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showDialog(item);
-                    },
-                  ),
-                ),
-              ],
-              position: RelativeRect.fromRect(
-                _tapPosition & Size(40, 40), // smaller rect, the touch area
-                Offset.zero & overlay.size, // Bigger rect, the entire screen
-              ),
-            );
-          },
           child: Slidable(
-            actionExtentRatio: 1 / 2,
+            actionExtentRatio: 1 / 5,
             actionPane: SlidableScrollActionPane(),
             actions: [
               IconSlideAction(
-                caption: "حذف",
-                color: Colors.red[200],
-                icon: Icons.delete,
-                onTap: () => print("delete ${item['name']}"),
-              ),
-              IconSlideAction(
-                caption: "تعديل",
-                color: Colors.blue[200],
                 icon: Icons.edit,
+                caption: "تعديل",
+                color: Colors.lightBlue[200],
                 onTap: () {
-                  Navigator.pop(context);
-                  print(item);
-
-                  // bloc.setContact(item);
                   EditPage.contact = item;
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => EditPage()),
                   );
                 },
-              )
+              ),
+              IconSlideAction(
+                  icon: Icons.delete,
+                  caption: "حذف",
+                  color: Colors.red[200],
+                  onTap: () {
+                    _showDialog(item);
+                  })
             ],
             child: Container(
               width: MediaQuery.of(context).size.width,
@@ -238,11 +195,17 @@ class _ContactListState extends State<ContactList> {
                 subtitle: RichText(
                   text: TextSpan(children: [
                     TextSpan(
-                        text:
-                            '${item['helpAmount'].toString().length > 0 ? item['helpAmount'].toString() + " ريال" : "[مقدار المساعدة]"}',
+                        text: item['helpAmount'].toString().length > 0
+                            ? item['helpAmount'] > 0
+                                ? '\u202B${Numeral(item['helpAmount']).value().replaceAll('K', ' ألف').replaceAll('M', ' مليون').replaceAll('B', ' مليار').replaceAll('T', ' ترليون ')}\u202C' +
+                                    ' ريال'
+                                : 'لا مقدار'
+                            : 'لا مقدار',
                         style: TextStyle(
                             fontWeight: item['helpAmount'].toString().length > 0
-                                ? FontWeight.bold
+                                ? item['helpAmount'] > 0
+                                    ? FontWeight.bold
+                                    : FontWeight.normal
                                 : FontWeight.normal)),
                     TextSpan(text: ' لأجل '),
                     TextSpan(
@@ -263,6 +226,7 @@ class _ContactListState extends State<ContactList> {
                   textAlign: TextAlign.left,
                 ),
                 onTap: () {
+                  print(item);
                   bloc.setContact(item);
                   Navigator.push(
                     context,

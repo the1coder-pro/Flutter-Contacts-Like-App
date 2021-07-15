@@ -1,5 +1,7 @@
+import 'package:help_app/src/app_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter/scheduler.dart';
 
 import '/src/app_module.dart';
 import '/src/home/home_bloc.dart';
@@ -7,6 +9,9 @@ import '/src/home/home_module.dart';
 import '/src/shared/repository/contact_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:syncfusion_flutter_core/core.dart';
+import 'package:hijri/hijri_calendar.dart';
 
 final _backgroundColor = Color(0xFFededed);
 final _foregroundColor = Colors.black;
@@ -28,6 +33,12 @@ class _EditPageState extends State<EditPage> {
   final _cPhoneNumber = TextEditingController();
   final _cNationalId = TextEditingController();
   final _chelpDate = TextEditingController();
+  final _chijriHelpDate = TextEditingController();
+
+  DateRangePickerController _chelpDateController = DateRangePickerController();
+  HijriDatePickerController _chijriHelpDateController =
+      HijriDatePickerController();
+
   String _chelpType;
   final _chelpTypeOther = TextEditingController();
 
@@ -47,6 +58,22 @@ class _EditPageState extends State<EditPage> {
 
   String storedNationalId;
   bool isNationalIdValid;
+
+  HijriCalendar hijriStartDate;
+  HijriCalendar hijriEndDate;
+
+  HijriDateRange hirjiDates;
+  PickerDateRange gregDates;
+
+  var storedStartDate;
+  var storedStartDay;
+  var storedStartMonth;
+  var storedStartYear;
+
+  var storedEndDate;
+  var storedEndDay;
+  var storedEndMonth;
+  var storedEndYear;
 
   openDBList(i) async {
     Database db = await contactRepository.getDb();
@@ -72,11 +99,43 @@ class _EditPageState extends State<EditPage> {
     _cPhoneNumber.text = EditPage.contact['phoneNumber'];
     _cNationalId.text = EditPage.contact['nationalId'];
     _chelpDate.text = EditPage.contact['helpDate'];
+
+    List helpDateArray;
+    if (_chelpDate.text.isEmpty || _chelpDate.text == null) {
+      helpDateArray =
+          "${DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
+              .split("-");
+    } else {
+      helpDateArray = _chelpDate.text.split("-");
+    }
+
+    storedStartDate = helpDateArray[0].split("/");
+    storedStartDay = int.parse(storedStartDate[0].trim());
+    storedStartMonth = int.parse(storedStartDate[1].trim());
+    storedStartYear = int.parse(storedStartDate[2].trim());
+
+    storedEndDate = helpDateArray[1].split("/");
+    storedEndDay = int.parse(storedEndDate[0].trim());
+    storedEndMonth = int.parse(storedEndDate[1].trim());
+    storedEndYear = int.parse(storedEndDate[2].trim());
+
+    hijriStartDate = HijriCalendar.fromDate(
+        DateTime(storedStartYear, storedStartMonth, storedStartDay));
+
+    hijriEndDate = HijriCalendar.fromDate(
+        DateTime(storedEndYear, storedEndMonth, storedEndDay));
+
+    _chijriHelpDate.text =
+        _chelpDate.text.isEmpty ? "" : "$hijriStartDate - $hijriEndDate";
+
     _chelpType = EditPage.contact['helpType'];
+
     _chelpTypeOther.text =
         !helpTypeList.contains(_chelpType) ? _chelpType : null;
 
     _chelpTypeOther.text = _chelpTypeOther.text.trim();
+
+    storedNationalId = _cNationalId.text;
 
     if (!helpTypeList.contains(_chelpType)) {
       setState(() {
@@ -84,7 +143,9 @@ class _EditPageState extends State<EditPage> {
       });
     }
 
-    _chelpAmount.text = EditPage.contact['helpAmount'].toString();
+    _chelpAmount.text = EditPage.contact['helpAmount'].toString() != '0'
+        ? EditPage.contact['helpAmount'].toString()
+        : '';
     _chelpDuration = EditPage.contact['helpDuration'];
     _cnotes.text = EditPage.contact['notes'];
 
@@ -129,16 +190,7 @@ class _EditPageState extends State<EditPage> {
       _date = DateTimeRange(
           start: DateTime.now(), end: DateTime.now().add(Duration(days: 10)));
     }
-
-    storedNationalId = _cNationalId.text;
-
     isNationalIdValid = _cNationalId.text == storedNationalId ? true : false;
-
-    print("value");
-
-    print("value $storedNationalId");
-    print("value $isNationalIdValid");
-
     super.initState();
   }
 
@@ -153,28 +205,10 @@ class _EditPageState extends State<EditPage> {
   final FocusNode _helpTypeOther = FocusNode();
   List helpTypeList = ["صدقة", "زواج", "معونة", "اجار", "بناء", "نذر", "حج"];
 
-  void selectDate() async {
-    final DateTimeRange newDate = await showDateRangePicker(
-        context: context,
-        initialDateRange: _date,
-        firstDate: DateTime(2000, 1),
-        lastDate: DateTime(2080, 12),
-        helpText: 'حدد نطاقًا زمنيًا',
-        saveText: 'حفظ',
-        confirmText: 'حسنا',
-        cancelText: 'إلغاء');
-    if (newDate != null) {
-      setState(() {
-        _date = newDate;
-      });
-    } else if (newDate == null) return;
-  }
-
   @override
   Widget build(BuildContext context) {
     TextFormField inputFirstName = TextFormField(
       controller: _cFirstName,
-      autofocus: true,
       keyboardType: TextInputType.text,
       textInputAction: TextInputAction.next,
       inputFormatters: [
@@ -188,7 +222,6 @@ class _EditPageState extends State<EditPage> {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
         labelText: 'الأسم الأول',
-        // labelStyle: TextStyle(color: _foregroundColor),
         icon: Icon(
           Icons.person,
           color: _foregroundColor,
@@ -230,7 +263,6 @@ class _EditPageState extends State<EditPage> {
       },
       decoration: InputDecoration(
         labelText: 'الأسم الأخير',
-        // labelStyle: TextStyle(color: _foregroundColor),
         icon: Icon(
           Icons.person,
           color: _foregroundColor,
@@ -265,19 +297,17 @@ class _EditPageState extends State<EditPage> {
         focusNode: _phoneNumberFocus,
         onFieldSubmitted: (term) {
           _phoneNumberFocus.unfocus();
-          FocusScope.of(context).requestFocus(_helpDateFocus);
+          FocusScope.of(context).requestFocus(_helpAmountFocus);
         },
         autovalidateMode: AutovalidateMode.onUserInteraction,
         keyboardType: TextInputType.phone,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
           labelText: "رقم الهاتف",
-          // labelStyle: TextStyle(color: _foregroundColor),
           icon: Icon(
             Icons.phone,
             color: _foregroundColor,
           ),
-
           suffixIcon: IconButton(
               icon: Icon(Icons.clear),
               color: _foregroundColor,
@@ -309,21 +339,19 @@ class _EditPageState extends State<EditPage> {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
         labelText: "رقم الهوية",
-        // labelStyle: TextStyle(color: _foregroundColor),
-        icon: Icon(Icons.person_pin_rounded, color: _foregroundColor),
+        icon: Icon(Icons.badge_outlined, color: _foregroundColor),
         suffixIcon: IconButton(
             icon: Icon(Icons.clear),
             color: _foregroundColor,
             onPressed: () => _cNationalId.text = ""),
       ),
-      // لا يتم التعديل للصفحة كلها لان البرنامج يحس ان رقم الهوية يريد ان يعيد التسجيل مجددا وهو ليس مسجل الا هذه المره ولكن يحسب ان في واحد اخر
-
       validator: (value) {
         if (value.isEmpty) {
           return "يجب إضافة رقم الهوية";
         } else if (value.length >= 1 && value.length < 10) {
           return "رقم الهوية يجب ان يكون عشرت ارقام";
-        } else if (isNationalIdValid == false) {
+        } else if (isNationalIdValid == false &&
+            _cNationalId.text != storedNationalId) {
           return "رقم الهوية مسجلة مسبقا";
         }
 
@@ -345,7 +373,7 @@ class _EditPageState extends State<EditPage> {
       },
     );
 
-    TextFormField inputHelpDate = TextFormField(
+    var inputHelpDate = TextFormField(
       controller: _chelpDate,
       inputFormatters: [
         LengthLimitingTextInputFormatter(50),
@@ -357,30 +385,301 @@ class _EditPageState extends State<EditPage> {
         _helpDateFocus.unfocus();
         FocusScope.of(context).requestFocus(_helpAmountFocus);
       },
-      // التاريخ لا يتعدل حتى بعد الإختيار لا يتغير
       onTap: () {
-        selectDate();
-        setState(() {
-          _chelpDate.text =
-              "${DateFormat('dd/MM/yyyy').format(_date.start)} - ${DateFormat('dd/MM/yyyy').format(_date.end)}";
-        });
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return Dialog(
+                child: SizedBox(
+                  width: 700,
+                  height: 400,
+                  child: SfDateRangePicker(
+                    onViewChanged: (DateRangePickerViewChangedArgs args) {
+                      List helpDateArray =
+                          _chijriHelpDate.text.trim().split("-");
 
-        // "${_date.start.day}/${_date.start.month}/${_date.start.year} - ${_date.end.day}/${_date.end.month}/${_date.end.year}";
-      },
-      onChanged: (value) {
-        _chelpDate.text = value;
+                      if (helpDateArray.length == 1 || helpDateArray.isEmpty) {
+                        hijriStartDate = HijriCalendar.fromDate(DateTime(
+                            DateTime.now().year,
+                            DateTime.now().month,
+                            DateTime.now().day));
+
+                        hijriEndDate = HijriCalendar.fromDate(DateTime(
+                            DateTime.now().add(Duration(days: 10)).year,
+                            DateTime.now().add(Duration(days: 10)).month,
+                            DateTime.now().add(Duration(days: 10)).day));
+
+                        helpDateArray =
+                            "$hijriStartDate-$hijriEndDate".split("-");
+                      }
+                      storedStartDate = helpDateArray[0].split("/");
+                      print("StartDate: $storedStartDate");
+                      print("dateArry: $helpDateArray");
+
+                      storedStartDay = int.parse(storedStartDate[0].trim());
+                      storedStartMonth = int.parse(storedStartDate[1].trim());
+                      storedStartYear = int.parse(storedStartDate[2].trim());
+
+                      storedEndDate = helpDateArray[1].split("/");
+                      storedEndDay = int.parse(storedEndDate[0].trim());
+                      storedEndMonth = int.parse(storedEndDate[1].trim());
+                      storedEndYear = int.parse(storedEndDate[2].trim());
+
+                      var dateToGergStart = new HijriCalendar();
+
+                      // var da3 = HijriDateTime(
+                      //         storedStartYear, storedStartMonth, storedStartDay)
+                      //     .toDateTime();
+
+                      // print("storedStartYear : $storedStartYear");
+                      // print("storedStartYearTOGERG: $da3");
+
+                      var dateToGergEnd = HijriCalendar();
+                      dateToGergEnd.hijriToGregorian(
+                          storedEndYear, storedEndMonth, storedEndDay);
+
+                      // print("dateToGergStart - Year: ${dateToGergStart.hYear}");
+                      // print("dateToGergEnd - Year: ${dateToGergEnd.hYear}");
+
+                      gregDates = PickerDateRange(
+                          DateTime(
+                              dateToGergStart
+                                  .hijriToGregorian(storedStartYear,
+                                      storedStartMonth, storedStartDay)
+                                  .year,
+                              dateToGergStart
+                                  .hijriToGregorian(storedStartYear,
+                                      storedStartMonth, storedStartDay)
+                                  .month,
+                              dateToGergStart
+                                  .hijriToGregorian(storedStartYear,
+                                      storedStartMonth, storedStartDay)
+                                  .day),
+                          DateTime(
+                              dateToGergEnd
+                                  .hijriToGregorian(storedEndYear,
+                                      storedEndMonth, storedEndDay)
+                                  .year,
+                              dateToGergEnd
+                                  .hijriToGregorian(storedEndYear,
+                                      storedEndMonth, storedEndDay)
+                                  .month,
+                              dateToGergEnd
+                                  .hijriToGregorian(storedEndYear,
+                                      storedEndMonth, storedEndDay)
+                                  .day));
+                      // print(
+                      //     "gregDates : ${gregDates.startDate}, ${gregDates.endDate}");
+                      SchedulerBinding.instance
+                          .addPostFrameCallback((Duration duration) {
+                        // _chelpDateController.selectedRange = gregDates;
+                        _chelpDateController.selectedRange = gregDates;
+                      });
+                    },
+                    backgroundColor: _backgroundColor,
+                    controller: _chelpDateController,
+                    view: DateRangePickerView.month,
+                    monthViewSettings: DateRangePickerMonthViewSettings(
+                        firstDayOfWeek: 6,
+                        viewHeaderStyle: DateRangePickerViewHeaderStyle(
+                            backgroundColor: Colors.grey[350])),
+                    headerStyle: DateRangePickerHeaderStyle(
+                        backgroundColor: Colors.grey[300],
+                        textStyle:
+                            TextStyle(color: _foregroundColor, fontSize: 30)),
+                    navigationDirection:
+                        DateRangePickerNavigationDirection.vertical,
+                    navigationMode: DateRangePickerNavigationMode.scroll,
+                    selectionMode: DateRangePickerSelectionMode.extendableRange,
+                    showActionButtons: true,
+                    confirmText: "حفظ",
+                    cancelText: "إلغاء",
+                    onCancel: () {
+                      Navigator.pop(context);
+                    },
+                    onSubmit: (value) {
+                      _chelpDate.text =
+                          "${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.startDate)} - ${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.endDate)}";
+
+                      setState(() {
+                        List helpDateArray = _chelpDate.text.split("-");
+
+                        storedStartDate = helpDateArray[0].split("/");
+                        storedStartDay = int.parse(storedStartDate[0].trim());
+                        storedStartMonth = int.parse(storedStartDate[1].trim());
+                        storedStartYear = int.parse(storedStartDate[2].trim());
+
+                        storedEndDate = helpDateArray[1].split("/");
+                        storedEndDay = int.parse(storedEndDate[0].trim());
+                        storedEndMonth = int.parse(storedEndDate[1].trim());
+                        storedEndYear = int.parse(storedEndDate[2].trim());
+
+                        hijriStartDate = HijriCalendar.fromDate(DateTime(
+                            storedStartYear, storedStartMonth, storedStartDay));
+
+                        hijriEndDate = HijriCalendar.fromDate(DateTime(
+                            storedEndYear, storedEndMonth, storedEndDay));
+
+                        hirjiDates = HijriDateRange(
+                            HijriDateTime(hijriStartDate.hYear,
+                                hijriStartDate.hMonth, hijriStartDate.hDay),
+                            HijriDateTime(hijriEndDate.hYear,
+                                hijriEndDate.hMonth, hijriEndDate.hDay));
+
+                        gregDates = PickerDateRange(
+                            DateTime(storedStartYear, storedStartMonth,
+                                storedStartDay),
+                            DateTime(
+                                storedEndYear, storedEndMonth, storedEndDay));
+                      });
+
+                      _chijriHelpDate.text = "";
+
+                      _chijriHelpDate.text = "$hijriStartDate - $hijriEndDate";
+
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              );
+            });
       },
       decoration: InputDecoration(
-          labelText: 'تاريخ المساعدة',
-          // labelStyle: TextStyle(color: _foregroundColor),
-          icon: Icon(Icons.calendar_today, color: _foregroundColor)),
+        labelText: 'ميلادي',
+        icon: Icon(Icons.date_range, color: _foregroundColor),
+      ),
+    );
+
+    var inputHelpHirjiDate = TextFormField(
+      controller: _chijriHelpDate,
+      inputFormatters: [
+        LengthLimitingTextInputFormatter(50),
+      ],
+      keyboardType: TextInputType.datetime,
+      textInputAction: TextInputAction.next,
+      focusNode: _helpDateFocus,
+      onFieldSubmitted: (term) {
+        _helpDateFocus.unfocus();
+        FocusScope.of(context).requestFocus(_helpAmountFocus);
+      },
+      onTap: () {
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return Dialog(
+                child: SizedBox(
+                  width: 700,
+                  height: 400,
+                  child: SfHijriDateRangePicker(
+                    onViewChanged: (HijriDatePickerViewChangedArgs args) {
+                      List helpDateArray;
+                      if (_chelpDate.text.isEmpty || _chelpDate.text == null) {
+                        helpDateArray =
+                            "${DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
+                                .split("-");
+                      } else {
+                        helpDateArray = _chelpDate.text.split("-");
+                      }
+                      storedStartDate = helpDateArray[0].split("/");
+                      storedStartDay = int.parse(storedStartDate[0].trim());
+                      storedStartMonth = int.parse(storedStartDate[1].trim());
+                      storedStartYear = int.parse(storedStartDate[2].trim());
+
+                      storedEndDate = helpDateArray[1].split("/");
+                      storedEndDay = int.parse(storedEndDate[0].trim());
+                      storedEndMonth = int.parse(storedEndDate[1].trim());
+                      storedEndYear = int.parse(storedEndDate[2].trim());
+
+                      hijriStartDate = HijriCalendar.fromDate(DateTime(
+                          storedStartYear, storedStartMonth, storedStartDay));
+
+                      hijriEndDate = HijriCalendar.fromDate(DateTime(
+                          storedEndYear, storedEndMonth, storedEndDay));
+
+                      hirjiDates = HijriDateRange(
+                          HijriDateTime(hijriStartDate.hYear,
+                              hijriStartDate.hMonth, hijriStartDate.hDay),
+                          HijriDateTime(hijriEndDate.hYear, hijriEndDate.hMonth,
+                              hijriEndDate.hDay));
+
+                      SchedulerBinding.instance
+                          .addPostFrameCallback((Duration duration) {
+                        // _chelpDateController.selectedRange = gregDates;
+                        _chijriHelpDateController.selectedRange = hirjiDates;
+                      });
+                    },
+                    backgroundColor: _backgroundColor,
+                    controller: _chijriHelpDateController,
+                    view: HijriDatePickerView.month,
+                    monthViewSettings: HijriDatePickerMonthViewSettings(
+                        firstDayOfWeek: 6,
+                        viewHeaderStyle: DateRangePickerViewHeaderStyle(
+                            backgroundColor: Colors.grey[350])),
+                    headerStyle: DateRangePickerHeaderStyle(
+                        backgroundColor: Colors.grey[300],
+                        textStyle:
+                            TextStyle(color: _foregroundColor, fontSize: 30)),
+                    navigationDirection:
+                        DateRangePickerNavigationDirection.vertical,
+                    navigationMode: DateRangePickerNavigationMode.scroll,
+                    selectionMode: DateRangePickerSelectionMode.extendableRange,
+                    showActionButtons: true,
+                    confirmText: "حفظ",
+                    cancelText: "إلغاء",
+                    onCancel: () {
+                      Navigator.pop(context);
+                    },
+                    onSubmit: (value) {
+                      _chijriHelpDate.text =
+                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+
+                      setState(() {
+                        var helpDateArray = _chijriHelpDate.text.split("-");
+                        storedStartDate = helpDateArray[0].split("/");
+                        storedStartDay = int.parse(storedStartDate[0].trim());
+                        storedStartMonth = int.parse(storedStartDate[1].trim());
+                        storedStartYear = int.parse(storedStartDate[2].trim());
+
+                        storedEndDate = helpDateArray[1].split("/");
+                        storedEndDay = int.parse(storedEndDate[0].trim());
+                        storedEndMonth = int.parse(storedEndDate[1].trim());
+                        storedEndYear = int.parse(storedEndDate[2].trim());
+
+                        hijriStartDate = HijriCalendar.fromDate(DateTime(
+                            storedStartYear, storedStartMonth, storedStartDay));
+                        hijriEndDate = HijriCalendar.fromDate(DateTime(
+                            storedEndYear, storedEndMonth, storedEndDay));
+
+                        gregDates = PickerDateRange(
+                            DateTime(storedStartYear, storedStartMonth,
+                                storedStartDay),
+                            DateTime(
+                                storedEndYear, storedEndMonth, storedEndDay));
+                      });
+
+                      _chijriHelpDate.text = "$hijriStartDate - $hijriEndDate";
+                      _chelpDate.text =
+                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              );
+            });
+      },
+      decoration: InputDecoration(
+        labelText: 'هجري',
+        icon: Icon(Icons.date_range, color: _foregroundColor),
+      ),
     );
 
     DropdownButtonFormField inputHelpType = DropdownButtonFormField(
       style: TextStyle(fontWeight: FontWeight.bold, color: _foregroundColor),
       decoration: InputDecoration(
         labelText: "نوع المساعدة",
-        // labelStyle: TextStyle(color: _foregroundColor),
         icon: Icon(Icons.help, color: _foregroundColor),
       ),
       value: helpTypeList.contains(_chelpType) ? _chelpType : "أخرى",
@@ -456,30 +755,36 @@ class _EditPageState extends State<EditPage> {
               icon: Icon(Icons.clear),
               color: _foregroundColor,
               onPressed: () => _chelpTypeOther.text = ""),
-          // labelStyle: TextStyle(color: _foregroundColor),
           icon: Icon(Icons.help, color: _foregroundColor),
         ),
       ),
     );
 
     TextFormField inputHelpAmount = TextFormField(
-      controller: _chelpAmount,
-      inputFormatters: [
-        LengthLimitingTextInputFormatter(50),
-      ],
-      keyboardType: TextInputType.phone,
-      textInputAction: TextInputAction.next,
-      focusNode: _helpAmountFocus,
-      onFieldSubmitted: (term) {
-        _helpAmountFocus.unfocus();
-        FocusScope.of(context).requestFocus(_notesFocus);
-      },
-      decoration: InputDecoration(
-        labelText: 'مقدار المساعدة',
-        // labelStyle: TextStyle(color: _foregroundColor),
-        icon: Icon(Icons.attach_money, color: _foregroundColor),
-      ),
-    );
+        controller: _chelpAmount,
+        inputFormatters: [
+          LengthLimitingTextInputFormatter(50),
+        ],
+        keyboardType: TextInputType.phone,
+        textInputAction: TextInputAction.next,
+        focusNode: _helpAmountFocus,
+        onFieldSubmitted: (term) {
+          _helpAmountFocus.unfocus();
+          FocusScope.of(context).requestFocus(_notesFocus);
+        },
+        decoration: InputDecoration(
+          labelText: 'مقدار المساعدة',
+          icon: Icon(Icons.attach_money, color: _foregroundColor),
+        ),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        validator: (value) {
+          if (value.trim().isNotEmpty) {
+            if (double.parse(value).floor() <= 0) {
+              return "يجب ان يكون المقدار اكثر من $value";
+            }
+          }
+          return null;
+        });
 
     TextFormField inputNotes = TextFormField(
       maxLines: 5,
@@ -489,7 +794,6 @@ class _EditPageState extends State<EditPage> {
       textInputAction: TextInputAction.done,
       decoration: InputDecoration(
         labelText: 'ملاحظات',
-        // labelStyle: TextStyle(color: _foregroundColor),
         icon: Icon(Icons.notes, color: _foregroundColor),
       ),
     );
@@ -536,10 +840,14 @@ class _EditPageState extends State<EditPage> {
                   SizedBox(height: 15),
                   inputPhoneNumber,
                   SizedBox(height: 15),
-                  inputHelpDate,
-                  SizedBox(height: 15),
-                  inputHelpType,
+                  Text("تاريخ المساعدة", textAlign: TextAlign.left),
                   SizedBox(height: 10),
+                  inputHelpDate,
+                  SizedBox(height: 8),
+                  inputHelpHirjiDate,
+                  SizedBox(height: 20),
+                  inputHelpType,
+                  SizedBox(height: 8),
                   inputHelpTypeOther,
                   SizedBox(height: 15),
                   inputHelpAmount,
@@ -605,7 +913,11 @@ class _EditPageState extends State<EditPage> {
                         'helpType': _chelpTypeOther.text.isEmpty
                             ? _chelpType
                             : _chelpTypeOther.text,
-                        'helpAmount': _chelpAmount.text,
+                        'helpAmount': _chelpAmount.text.trim().isNotEmpty
+                            ? double.parse(_chelpAmount.text).floor() <= 0
+                                ? '0'
+                                : _chelpAmount.text
+                            : '0',
                         'helpDuration': _chelpDuration,
                         'notes': _cnotes.text
                       }, EditPage.contact['id']).then((saved) {
@@ -617,12 +929,21 @@ class _EditPageState extends State<EditPage> {
                           'helpType': _chelpTypeOther.text.isEmpty
                               ? _chelpType
                               : _chelpTypeOther.text,
-                          'helpAmount': _chelpAmount.text,
+                          'helpAmount': _chelpAmount.text.trim().isNotEmpty
+                              ? double.parse(_chelpAmount.text).floor() <= 0
+                                  ? '0'
+                                  : _chelpAmount.text
+                              : '0',
                           'helpDuration': _chelpDuration,
                           'notes': _cnotes.text
                         };
                         bloc.setContact(contact);
-                        Navigator.pop(context);
+
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => AppWidget()),
+                          (Route<dynamic> route) => false,
+                        );
                       });
                     } on DatabaseException catch (err) {
                       print("يوجد خطأ: $err");

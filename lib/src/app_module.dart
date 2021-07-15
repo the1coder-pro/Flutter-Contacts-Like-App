@@ -1,8 +1,8 @@
-import 'package:exemplo/src/shared/repository/contact_repository.dart';
+import 'package:help_app/src/shared/repository/contact_repository.dart';
 import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:flutter/material.dart';
-import 'package:exemplo/src/app_widget.dart';
-import 'package:exemplo/src/app_bloc.dart';
+import 'package:help_app/src/app_widget.dart';
+import 'package:help_app/src/app_bloc.dart';
 
 class AppModule extends ModuleWidget {
   @override
