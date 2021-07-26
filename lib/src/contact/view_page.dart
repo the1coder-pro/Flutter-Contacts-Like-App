@@ -2,15 +2,15 @@
 // import 'dart:async';
 // import 'package:exemplo/application.dart';
 
+import 'package:help_app/src/contact/settings_page.dart';
+
 import '/src/home/home_bloc.dart';
 import '/src/home/home_module.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:hijri/digits_converter.dart';
-// import 'package:hijri/hijri_array.dart';
+
 import 'package:hijri/hijri_calendar.dart';
 import 'package:provider/provider.dart';
 
@@ -74,11 +74,114 @@ class _ViewPageState extends State<ViewPage> {
       );
     }
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size(double.infinity, kToolbarHeight),
-        child: StreamBuilder(
-          stream: blocHome.favoriteOut,
+    final mySettings = Provider.of<MySettings>(context);
+
+    return Directionality(
+      textDirection:
+          mySettings.leftToRight ? TextDirection.ltr : TextDirection.rtl,
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size(double.infinity, kToolbarHeight),
+          child: StreamBuilder(
+            stream: blocHome.favoriteOut,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                print(snapshot.error);
+                return Text('خطأ : ${snapshot.error}');
+              } else {
+                var fullNameSeprated = contact['name'].trim().split(" ");
+
+                var lastName = fullNameSeprated.last;
+                fullNameSeprated.removeLast();
+                var firstName = fullNameSeprated.join(" ");
+
+                return AppBar(
+                  foregroundColor: _foregroundColor,
+                  actionsIconTheme: IconThemeData(color: _foregroundColor),
+                  iconTheme: IconThemeData(color: _foregroundColor),
+                  elevation: 0.5,
+                  actions: <Widget>[
+                    IconButton(
+                        icon: Icon(Icons.delete),
+                        tooltip: "حذف",
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) {
+                                return Directionality(
+                                  textDirection: mySettings.leftToRight
+                                      ? TextDirection.ltr
+                                      : TextDirection.rtl,
+                                  child: AlertDialog(
+                                    title: Text(
+                                        "هل انت متأكد انك تريد حذف هذه المساعدة ؟"),
+                                    titlePadding: EdgeInsets.all(50),
+                                    content: Text(
+                                      "$firstName $lastName",
+                                      style: TextStyle(
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    actions: <Widget>[
+                                      OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                            primary: _foregroundColor),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text("إلغاء",
+                                              style: TextStyle(fontSize: 20)),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            primary: _foregroundColor),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            "نعم",
+                                            style: TextStyle(
+                                                color: _backgroundColor,
+                                                fontSize: 20),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          blocHome.deleteContact(contact['id']);
+                                          Navigator.pop(pageContext);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              });
+                        }),
+                    IconButton(
+                      icon: Icon(Icons.edit),
+                      tooltip: "تعديل",
+                      onPressed: () {
+                        EditPage.contact = this.contact;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => EditPage()),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+        ),
+        body: StreamBuilder(
+          stream: blocHome.contactOut,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
@@ -86,96 +189,14 @@ class _ViewPageState extends State<ViewPage> {
 
             if (snapshot.hasError) {
               print(snapshot.error);
-              return Text('خطأ : ${snapshot.error}');
+              return Text('Error: ${snapshot.error}');
             } else {
-              var fullNameSeprated = contact['name'].trim().split(" ");
-
-              var lastName = fullNameSeprated.last;
-              fullNameSeprated.removeLast();
-              var firstName = fullNameSeprated.join(" ");
-
-              return AppBar(
-                foregroundColor: _foregroundColor,
-                actionsIconTheme: IconThemeData(color: _foregroundColor),
-                iconTheme: IconThemeData(color: _foregroundColor),
-                elevation: 0.5,
-                actions: <Widget>[
-                  IconButton(
-                      icon: Icon(Icons.delete),
-                      tooltip: "حذف",
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text(
-                                    "هل انت متأكد انك تريد حذف هذه المساعدة ؟"),
-                                content: Text(
-                                  "$firstName $lastName",
-                                  style: TextStyle(
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                actions: <Widget>[
-                                  OutlinedButton(
-                                    style: OutlinedButton.styleFrom(
-                                        primary: _foregroundColor),
-                                    child: Text("إلغاء"),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                        primary: _foregroundColor),
-                                    child: Text(
-                                      "نعم",
-                                      style: TextStyle(color: _backgroundColor),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      blocHome.deleteContact(contact['id']);
-                                      Navigator.pop(pageContext);
-                                    },
-                                  ),
-                                ],
-                              );
-                            });
-                      }),
-                  IconButton(
-                    icon: Icon(Icons.edit),
-                    tooltip: "تعديل",
-                    onPressed: () {
-                      EditPage.contact = this.contact;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditPage()),
-                      );
-                    },
-                  ),
-                ],
-              );
+              this.contact = snapshot.data;
+              blocHome.setFavorite(snapshot.data['favorite'] == 1);
+              return content(context, snapshot.data);
             }
           },
         ),
-      ),
-      body: StreamBuilder(
-        stream: blocHome.contactOut,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            print(snapshot.error);
-            return Text('Error: ${snapshot.error}');
-          } else {
-            this.contact = snapshot.data;
-            blocHome.setFavorite(snapshot.data['favorite'] == 1);
-            return content(context, snapshot.data);
-          }
-        },
       ),
     );
   }

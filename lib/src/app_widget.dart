@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:help_app/src/contact/settings_page.dart';
+import 'package:provider/provider.dart';
 import '/src/home/home_module.dart';
 // import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -82,10 +84,13 @@ class AppWidget extends StatelessWidget {
       '/home': (context) => HomePage(),
     };
 
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: _buildHelpAppTheme(),
-        home: HomeModule(),
-        routes: routes);
+    return ChangeNotifierProvider(
+      create: (context) => MySettings(),
+      child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _buildHelpAppTheme(),
+          home: HomeModule(),
+          routes: routes),
+    );
   }
 }

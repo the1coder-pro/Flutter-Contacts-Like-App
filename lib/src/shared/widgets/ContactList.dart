@@ -1,4 +1,6 @@
+import 'package:help_app/src/contact/settings_page.dart';
 import 'package:numeral/numeral.dart';
+import 'package:provider/provider.dart';
 
 import '/src/about/about_page.dart';
 import '/src/contact/add_page.dart';
@@ -6,7 +8,6 @@ import '/src/contact/edit_page.dart';
 import '/src/contact/view_page.dart';
 import '/src/home/home_bloc.dart';
 import '/src/home/home_module.dart';
-// import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import 'package:supercharged/supercharged.dart';
@@ -96,32 +97,43 @@ class _ContactListState extends State<ContactList> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("هل انت متأكد انك تريد حذف هذه المساعدة ؟"),
-          content: Text(
-            "${item['name']}",
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-          ),
-          actions: <Widget>[
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(primary: _foregroundColor),
-              child: Text("إلغاء"),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(primary: _foregroundColor),
-              child: Text(
-                "نعم",
-                style: TextStyle(color: _backgroundColor),
+        final mySettings = Provider.of<MySettings>(context);
+
+        return Directionality(
+          textDirection:
+              mySettings.leftToRight ? TextDirection.ltr : TextDirection.rtl,
+          child: AlertDialog(
+            title: Text("هل انت متأكد انك تريد حذف هذه المساعدة ؟"),
+            titlePadding: EdgeInsets.all(50),
+            content: Text("${item['name']}",
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+            actions: <Widget>[
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(primary: _foregroundColor),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("إلغاء", style: TextStyle(fontSize: 20)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
               ),
-              onPressed: () {
-                Navigator.pop(context);
-                bloc.deleteContact(item['id']);
-              },
-            ),
-          ],
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(primary: _foregroundColor),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    "نعم",
+                    style: TextStyle(color: _backgroundColor, fontSize: 20),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  bloc.deleteContact(item['id']);
+                },
+              ),
+            ],
+          ),
         );
       },
     );
@@ -132,6 +144,7 @@ class _ContactListState extends State<ContactList> {
     if (widget.items.length == 0) {
       return column(context);
     }
+    final mySettings = Provider.of<MySettings>(context);
 
     return ListView.separated(
       separatorBuilder: (_, __) => Divider(),
@@ -143,27 +156,52 @@ class _ContactListState extends State<ContactList> {
           child: Slidable(
             actionExtentRatio: 1 / 5,
             actionPane: SlidableScrollActionPane(),
-            actions: [
-              IconSlideAction(
-                icon: Icons.edit,
-                caption: "تعديل",
-                color: Colors.lightBlue[200],
-                onTap: () {
-                  EditPage.contact = item;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => EditPage()),
-                  );
-                },
-              ),
-              IconSlideAction(
-                  icon: Icons.delete,
-                  caption: "حذف",
-                  color: Colors.red[200],
-                  onTap: () {
-                    _showDialog(item);
-                  })
-            ],
+            actions: mySettings.leftToRight
+                ? [
+                    IconSlideAction(
+                      icon: Icons.edit,
+                      caption: "تعديل",
+                      color: Colors.lightBlue[200],
+                      onTap: () {
+                        EditPage.contact = item;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => EditPage()),
+                        );
+                      },
+                    ),
+                    IconSlideAction(
+                        icon: Icons.delete,
+                        caption: "حذف",
+                        color: Colors.red[200],
+                        onTap: () {
+                          _showDialog(item);
+                        })
+                  ]
+                : [],
+            secondaryActions: mySettings.leftToRight
+                ? []
+                : [
+                    IconSlideAction(
+                      icon: Icons.edit,
+                      caption: "تعديل",
+                      color: Colors.lightBlue[200],
+                      onTap: () {
+                        EditPage.contact = item;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => EditPage()),
+                        );
+                      },
+                    ),
+                    IconSlideAction(
+                        icon: Icons.delete,
+                        caption: "حذف",
+                        color: Colors.red[200],
+                        onTap: () {
+                          _showDialog(item);
+                        })
+                  ],
             child: Container(
               width: MediaQuery.of(context).size.width,
               child: ListTile(
@@ -178,20 +216,20 @@ class _ContactListState extends State<ContactList> {
                   )),
                 ),
                 title: RichText(
-                    textDirection: TextDirection.rtl,
-                    textAlign: TextAlign.left,
+                    // textDirection: TextDirection.rtl,
+                    // textAlign: TextAlign.left,
                     text: TextSpan(
-                      children: [
-                        TextSpan(
-                            text: "${item['name']}\n",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontFamily: 'Changa',
-                            )),
-                        TextSpan(text: "${item['nationalId']}")
-                      ],
-                      style: TextStyle(fontSize: 17, color: _foregroundColor),
-                    )),
+                  children: [
+                    TextSpan(
+                        text: "${item['name']}\n",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: 'Changa',
+                        )),
+                    TextSpan(text: "${item['nationalId']}")
+                  ],
+                  style: TextStyle(fontSize: 17, color: _foregroundColor),
+                )),
                 subtitle: RichText(
                   text: TextSpan(children: [
                     TextSpan(
@@ -222,8 +260,8 @@ class _ContactListState extends State<ContactList> {
                         text: '${item['helpDuration']}',
                         style: TextStyle(fontWeight: FontWeight.bold))
                   ], style: TextStyle(color: _foregroundColor)),
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.left,
+                  // textDirection: TextDirection.rtl,
+                  // textAlign: TextAlign.left,
                 ),
                 onTap: () {
                   print(item);

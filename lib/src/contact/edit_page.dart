@@ -1,5 +1,7 @@
 import 'package:help_app/src/app_widget.dart';
-import 'package:intl/intl.dart';
+import 'package:help_app/src/contact/settings_page.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -50,6 +52,7 @@ class _EditPageState extends State<EditPage> {
   ContactRepository contactRepository;
   static var _chelpDuration = "";
 
+  // ignore: unused_field
   DateTimeRange _date;
 
   DurationList _character = _chelpDuration == "مسمترة"
@@ -103,7 +106,7 @@ class _EditPageState extends State<EditPage> {
     List helpDateArray;
     if (_chelpDate.text.isEmpty || _chelpDate.text == null) {
       helpDateArray =
-          "${DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
+          "${intl.DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${intl.DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
               .split("-");
     } else {
       helpDateArray = _chelpDate.text.split("-");
@@ -203,7 +206,7 @@ class _EditPageState extends State<EditPage> {
   final FocusNode _notesFocus = FocusNode();
 
   final FocusNode _helpTypeOther = FocusNode();
-  List helpTypeList = ["صدقة", "زواج", "معونة", "اجار", "بناء", "نذر", "حج"];
+  List helpTypeList = ["صدقة", "زواج", "مؤونة", "اجار", "بناء"];
 
   @override
   Widget build(BuildContext context) {
@@ -500,7 +503,7 @@ class _EditPageState extends State<EditPage> {
                     },
                     onSubmit: (value) {
                       _chelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.startDate)} - ${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.endDate)}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.startDate)} - ${intl.DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.endDate)}";
 
                       setState(() {
                         List helpDateArray = _chelpDate.text.split("-");
@@ -577,7 +580,7 @@ class _EditPageState extends State<EditPage> {
                       List helpDateArray;
                       if (_chelpDate.text.isEmpty || _chelpDate.text == null) {
                         helpDateArray =
-                            "${DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
+                            "${intl.DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${intl.DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
                                 .split("-");
                       } else {
                         helpDateArray = _chelpDate.text.split("-");
@@ -633,7 +636,7 @@ class _EditPageState extends State<EditPage> {
                     },
                     onSubmit: (value) {
                       _chijriHelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
 
                       setState(() {
                         var helpDateArray = _chijriHelpDate.text.split("-");
@@ -661,7 +664,7 @@ class _EditPageState extends State<EditPage> {
 
                       _chijriHelpDate.text = "$hijriStartDate - $hijriEndDate";
                       _chelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
 
                       Navigator.pop(context);
                     },
@@ -708,8 +711,8 @@ class _EditPageState extends State<EditPage> {
           value: "زواج",
         ),
         DropdownMenuItem(
-          child: Text("معونة"),
-          value: "معونة",
+          child: Text("مؤونة"),
+          value: "مؤونة",
         ),
         DropdownMenuItem(
           child: Text("اجار"),
@@ -718,14 +721,6 @@ class _EditPageState extends State<EditPage> {
         DropdownMenuItem(
           child: Text("بناء"),
           value: "بناء",
-        ),
-        DropdownMenuItem(
-          child: Text("نذر"),
-          value: "نذر",
-        ),
-        DropdownMenuItem(
-          child: Text("حج"),
-          value: "حج",
         ),
         DropdownMenuItem(
           child: Text("أخرى"),
@@ -885,47 +880,35 @@ class _EditPageState extends State<EditPage> {
             ))
       ],
     );
+    final mySettings = Provider.of<MySettings>(context);
 
-    return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.close),
-            tooltip: "إغلاق",
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          title: Text("تعديل المساعدة"),
-          actions: <Widget>[
-            Container(
-              width: 80,
-              child: IconButton(
-                icon: Icon(Icons.check),
-                tooltip: "حفظ",
-                onPressed: () {
-                  if (_formKey.currentState.validate()) {
-                    try {
-                      contactRepository.update({
-                        'name': "${_cFirstName.text} ${_cLastName.text}",
-                        'nationalId': _cNationalId.text,
-                        'phoneNumber': _cPhoneNumber.text,
-                        'helpDate': _chelpDate.text.toString(),
-                        'helpType': _chelpTypeOther.text.isEmpty
-                            ? _chelpType
-                            : _chelpTypeOther.text,
-                        'helpAmount': _chelpAmount.text.trim().isNotEmpty
-                            ? double.parse(_chelpAmount.text).floor() <= 0
-                                ? '0'
-                                : _chelpAmount.text
-                            : '0',
-                        'helpDuration': _chelpDuration,
-                        'notes': _cnotes.text
-                      }, EditPage.contact['id']).then((saved) {
-                        Map contact = {
+    return Directionality(
+      textDirection:
+          mySettings.leftToRight ? TextDirection.ltr : TextDirection.rtl,
+      child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: Icon(Icons.close),
+              tooltip: "إغلاق",
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            title: Text("تعديل المساعدة"),
+            actions: <Widget>[
+              Container(
+                width: 80,
+                child: IconButton(
+                  icon: Icon(Icons.check),
+                  tooltip: "حفظ",
+                  onPressed: () {
+                    if (_formKey.currentState.validate()) {
+                      try {
+                        contactRepository.update({
                           'name': "${_cFirstName.text} ${_cLastName.text}",
                           'nationalId': _cNationalId.text,
                           'phoneNumber': _cPhoneNumber.text,
-                          'helpDate': _chelpDate.text,
+                          'helpDate': _chelpDate.text.toString(),
                           'helpType': _chelpTypeOther.text.isEmpty
                               ? _chelpType
                               : _chelpTypeOther.text,
@@ -936,24 +919,42 @@ class _EditPageState extends State<EditPage> {
                               : '0',
                           'helpDuration': _chelpDuration,
                           'notes': _cnotes.text
-                        };
-                        bloc.setContact(contact);
+                        }, EditPage.contact['id']).then((saved) {
+                          Map contact = {
+                            'name': "${_cFirstName.text} ${_cLastName.text}",
+                            'nationalId': _cNationalId.text,
+                            'phoneNumber': _cPhoneNumber.text,
+                            'helpDate': _chelpDate.text,
+                            'helpType': _chelpTypeOther.text.isEmpty
+                                ? _chelpType
+                                : _chelpTypeOther.text,
+                            'helpAmount': _chelpAmount.text.trim().isNotEmpty
+                                ? double.parse(_chelpAmount.text).floor() <= 0
+                                    ? '0'
+                                    : _chelpAmount.text
+                                : '0',
+                            'helpDuration': _chelpDuration,
+                            'notes': _cnotes.text
+                          };
+                          bloc.setContact(contact);
 
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => AppWidget()),
-                          (Route<dynamic> route) => false,
-                        );
-                      });
-                    } on DatabaseException catch (err) {
-                      print("يوجد خطأ: $err");
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AppWidget()),
+                            (Route<dynamic> route) => false,
+                          );
+                        });
+                      } on DatabaseException catch (err) {
+                        print("يوجد خطأ: $err");
+                      }
                     }
-                  }
-                },
-              ),
-            )
-          ],
-        ),
-        body: body);
+                  },
+                ),
+              )
+            ],
+          ),
+          body: body),
+    );
   }
 }

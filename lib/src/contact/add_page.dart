@@ -4,8 +4,10 @@
 // import 'package:reactive_forms/reactive_forms.dart';
 // import 'package:async_textformfield/async_textformfield.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:help_app/src/contact/settings_page.dart';
 import 'package:hijri/hijri_calendar.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:provider/provider.dart';
 // import 'package:provider/provider.dart';
 
 import '/src/home/home_bloc.dart';
@@ -421,7 +423,7 @@ class _AddPageState extends State<AddPage> {
                     },
                     onSubmit: (value) {
                       _chelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.startDate)} - ${DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.endDate)}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.startDate)} - ${intl.DateFormat('dd/MM/yyyy').format(_chelpDateController.selectedRange.endDate)}";
 
                       setState(() {
                         List helpDateArray = _chelpDate.text.split("-");
@@ -498,7 +500,7 @@ class _AddPageState extends State<AddPage> {
                       List helpDateArray;
                       if (_chelpDate.text.isEmpty || _chelpDate.text == null) {
                         helpDateArray =
-                            "${DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
+                            "${intl.DateFormat('dd/MM/yyyy').format(DateTime.now())} - ${intl.DateFormat('dd/MM/yyyy').format(DateTime.now().add(Duration(days: 10)))}"
                                 .split("-");
                       } else {
                         helpDateArray = _chelpDate.text.split("-");
@@ -554,7 +556,7 @@ class _AddPageState extends State<AddPage> {
                     },
                     onSubmit: (value) {
                       _chijriHelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
 
                       setState(() {
                         var helpDateArray = _chijriHelpDate.text.split("-");
@@ -582,7 +584,7 @@ class _AddPageState extends State<AddPage> {
 
                       _chijriHelpDate.text = "$hijriStartDate - $hijriEndDate";
                       _chelpDate.text =
-                          "${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
+                          "${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.startDate.toDateTime())} - ${intl.DateFormat('dd/MM/yyyy').format(_chijriHelpDateController.selectedRange.endDate.toDateTime())}";
 
                       Navigator.pop(context);
                     },
@@ -630,8 +632,8 @@ class _AddPageState extends State<AddPage> {
           value: "زواج",
         ),
         DropdownMenuItem(
-          child: Text("معونة"),
-          value: "معونة",
+          child: Text("مؤونة"),
+          value: "مؤونة",
         ),
         DropdownMenuItem(
           child: Text("اجار"),
@@ -640,14 +642,6 @@ class _AddPageState extends State<AddPage> {
         DropdownMenuItem(
           child: Text("بناء"),
           value: "بناء",
-        ),
-        DropdownMenuItem(
-          child: Text("نذر"),
-          value: "نذر",
-        ),
-        DropdownMenuItem(
-          child: Text("حج"),
-          value: "حج",
         ),
         DropdownMenuItem(
           child: Text("أخرى"),
@@ -807,62 +801,67 @@ class _AddPageState extends State<AddPage> {
         ),
       ],
     );
+    final mySettings = Provider.of<MySettings>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        foregroundColor: _foregroundColor,
-        backgroundColor: _backgroundColor,
-        elevation: 0,
-        actionsIconTheme: IconThemeData(color: _foregroundColor),
-        leading: IconButton(
-          icon: Icon(Icons.close),
-          tooltip: "اغلاق",
-          color: _foregroundColor,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: Text("إنشاء مساعدة جديدة",
-            style: TextStyle(color: _foregroundColor)),
-        actions: <Widget>[
-          Container(
-            width: 80,
-            child: IconButton(
-              icon: Icon(Icons.check),
-              tooltip: "حفظ",
-              onPressed: () {
-                if (_formKey.currentState.validate()) {
-                  try {
-                    contactRepository.insert({
-                      'name':
-                          "${_cFirstName.text.trim()} ${_cLastName.text.trim()}",
-                      'nationalId': _cNationalId.text,
-                      'phoneNumber': _cPhoneNumber.text,
-                      'helpDate': _chelpDate.text,
-                      'helpType': _chelpTypeOther.text.isEmpty
-                          ? _chelpType
-                          : _chelpTypeOther.text,
-                      'helpAmount': _chelpAmount.text.trim().isNotEmpty
-                          ? double.parse(_chelpAmount.text).floor() <= 0
-                              ? '0'
-                              : _chelpAmount.text
-                          : '0',
-                      'helpDuration': _chelpDuration,
-                      'notes': _cnotes.text
-                    }).then((saved) {
-                      bloc.getListContact();
-                      Navigator.of(context).pop();
-                    });
-                  } on DatabaseException catch (err) {
-                    print("يوجد خطأ: $err");
+    return Directionality(
+      textDirection:
+          mySettings.leftToRight ? TextDirection.ltr : TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          foregroundColor: _foregroundColor,
+          backgroundColor: _backgroundColor,
+          elevation: 0,
+          actionsIconTheme: IconThemeData(color: _foregroundColor),
+          leading: IconButton(
+            icon: Icon(Icons.close),
+            tooltip: "اغلاق",
+            color: _foregroundColor,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          title: Text("إنشاء مساعدة جديدة",
+              style: TextStyle(color: _foregroundColor)),
+          actions: <Widget>[
+            Container(
+              width: 80,
+              child: IconButton(
+                icon: Icon(Icons.check),
+                tooltip: "حفظ",
+                onPressed: () {
+                  if (_formKey.currentState.validate()) {
+                    try {
+                      contactRepository.insert({
+                        'name':
+                            "${_cFirstName.text.trim()} ${_cLastName.text.trim()}",
+                        'nationalId': _cNationalId.text,
+                        'phoneNumber': _cPhoneNumber.text,
+                        'helpDate': _chelpDate.text,
+                        'helpType': _chelpTypeOther.text.isEmpty
+                            ? _chelpType
+                            : _chelpTypeOther.text,
+                        'helpAmount': _chelpAmount.text.trim().isNotEmpty
+                            ? double.parse(_chelpAmount.text).floor() <= 0
+                                ? '0'
+                                : _chelpAmount.text
+                            : '0',
+                        'helpDuration': _chelpDuration,
+                        'notes': _cnotes.text
+                      }).then((saved) {
+                        bloc.getListContact();
+                        Navigator.of(context).pop();
+                      });
+                    } on DatabaseException catch (err) {
+                      print("يوجد خطأ: $err");
+                    }
                   }
-                }
-              },
-            ),
-          )
-        ],
+                },
+              ),
+            )
+          ],
+        ),
+        body: content,
       ),
-      body: content,
     );
   }
 }

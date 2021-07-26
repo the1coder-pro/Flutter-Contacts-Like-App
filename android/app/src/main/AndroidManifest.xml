@@ -12,8 +12,8 @@
     <application
         android:requestLegacyExternalStorage="true"
 
-        android:label="exemplo"
-        android:icon="@mipmap/ic_launcher">
+        android:label="Aid App"
+        android:icon="@mipmap/launcher_icon">
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
